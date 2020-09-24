@@ -1,9 +1,30 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:sentry/sentry.dart';
 
-void main() {
-  runApp(MyApp());
+final sentry = SentryClient(dsn: "https://sentry.io/jakello/flutter");
+
+void main() async {
+  runZonedGuarded(
+    () => runApp(MyApp()),
+    (error, stackTrace) async {
+      await sentry.captureException(
+        exception: error,
+        stackTrace: stackTrace,
+      );
+    },
+  );
+
+
+  FlutterError.onError = (details, {bool forceReport = false}) {
+  sentry.captureException(
+    exception: details.exception,
+    stackTrace: details.stack,
+  );
+};
+
+
 }
-
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -29,7 +50,7 @@ class MyApp extends StatelessWidget {
       ),
       home: MyHomePage(title: 'Flutter Demo Home Page'),
     );
-  }
+  
 }
 
 class MyHomePage extends StatefulWidget {
