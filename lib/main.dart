@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:sentry/sentry.dart';
 
-final sentry = SentryClient(dsn: "https://sentry.io/jakello/flutter");
+final sentry = SentryClient(dsn: "https://13a0e9c0fe854b81843c8a620dc265c2@o433262.ingest.sentry.io/5436444");
 
 bool get isInDebugMode {
   bool inDebugMode = false;
@@ -59,7 +59,7 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MaterialApp(
       title: 'An app that can count...',
       theme: ThemeData(
         // This is the theme of your application.
