@@ -4,26 +4,55 @@ import 'package:sentry/sentry.dart';
 
 final sentry = SentryClient(dsn: "https://sentry.io/jakello/flutter");
 
-void main() async {
-  runZonedGuarded(
-    () => runApp(MyApp()),
-    (error, stackTrace) async {
-      await sentry.captureException(
-        exception: error,
-        stackTrace: stackTrace,
-      );
-    },
+bool get isInDebugMode {
+  bool inDebugMode = false;
+  assert(inDebugMode = true);
+  return inDebugMode;
+}
+
+Future<Null> _reportError(dynamic error, dynamic stackTrace) async {
+  print('Caught error: $error');
+
+
+    if (isInDebugMode) {
+    print(stackTrace);
+    print('In dev mode. Not sending report to Sentry.io.');
+    return;
+  }
+
+  print('Reporting to Sentry.io...');
+
+
+  final SentryResponse response = await sentry.captureException(
+    exception: error,
+    stackTrace: stackTrace,
   );
 
+  if (response.isSuccessful) {
+    print('Success! Event ID: ${response.eventId}');
+  } else {
+    print('Failed to report to Sentry.io: ${response.error}');
+  }
+}
 
-  FlutterError.onError = (details, {bool forceReport = false}) {
-  sentry.captureException(
-    exception: details.exception,
-    stackTrace: details.stack,
-  );
-};
+Future<Null> main() async {
+  // This captures errors reported by the Flutter framework.
+  FlutterError.onError = (FlutterErrorDetails details) async {
+    if (isInDebugMode) {
+      // In development mode simply print to console.
+      FlutterError.dumpErrorToConsole(details);
+    } else {
+      // In production mode report to the application zone to report to
+      // Sentry.
+      Zone.current.handleUncaughtError(details.exception, details.stack);
+    }
+  };
 
-
+    runZonedGuarded<Future<Null>>(() async {
+    runApp(new MyApp());
+  }, (error, stackTrace) async {
+    await _reportError(error, stackTrace);
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -42,7 +71,7 @@ class MyApp extends StatelessWidget {
         // or simply save your changes to "hot reload" in a Flutter IDE).
         // Notice that the counter didn't reset back to zero; the application
         // is not restarted.
-        primarySwatch: Colors.green,
+        primarySwatch: Colors.red,
         // This makes the visual density adapt to the platform that you run
         // the app on. For desktop platforms, the controls will be smaller and
         // closer together (more dense) than on mobile platforms.
@@ -50,7 +79,7 @@ class MyApp extends StatelessWidget {
       ),
       home: MyHomePage(title: 'Flutter Demo Home Page'),
     );
-  
+  }
 }
 
 class MyHomePage extends StatefulWidget {
